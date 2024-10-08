@@ -2,7 +2,7 @@
 #ifndef JUMP_H
 #define JUMP_H
 
-#include "types.h"
+#include "rkhosaTypes.h"
 
 //	Gravity
 extern const float gravity; 

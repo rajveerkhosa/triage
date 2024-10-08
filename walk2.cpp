@@ -24,7 +24,7 @@
 #include "log.h"
 //#include "ppm.h"
 #include "fonts.h"
-#include "jump.h"
+#include "rkhosa.h"
 
 //defined types
 typedef double Flt;

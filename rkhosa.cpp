@@ -5,7 +5,7 @@
 //This program includes:
 //	implementation of jumping mechanism
 
-#include "jump.h"
+#include "rkhosa.h"
 
 void handleJump(Vec &pos, Vec &vel, bool &isJumping) {
     if (isJumping) {
