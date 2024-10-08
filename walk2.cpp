@@ -24,6 +24,7 @@
 #include "log.h"
 //#include "ppm.h"
 #include "fonts.h"
+#include "jump.h"
 
 //defined types
 typedef double Flt;
@@ -51,6 +52,9 @@ int checkKeys(XEvent *e);
 void init();
 void physics();
 void render();
+
+//global variables
+bool isJumping = false; 
 
 //-----------------------------------------------------------------------------
 //Setup timers
@@ -534,72 +538,70 @@ void screenCapture()
 	++fnum;
 }
 
-int checkKeys(XEvent *e)
+int checkKeys(XEvent *e)                                                                                                                                                                   
 {
-	//keyboard input?
-	static int shift=0;
-	if (e->type != KeyPress && e->type != KeyRelease)
-		return 0;
-	int key = XLookupKeysym(&e->xkey, 0);
-	gl.keys[key]=1;
-	if (e->type == KeyRelease) {
-		gl.keys[key]=0;
-		if (key == XK_Shift_L || key == XK_Shift_R)
-			shift=0;
-		return 0;
-	}
-	gl.keys[key]=1;
-	if (key == XK_Shift_L || key == XK_Shift_R) {
-		shift=1;
-		return 0;
-	}
-	(void)shift;
-	switch (key) {
-		case XK_s:
-			screenCapture();
-			break;
-		case XK_m:
-			gl.movie ^= 1;
-			break;
-		case XK_w:
-			timers.recordTime(&timers.walkTime);
-			gl.walk ^= 1;
-			break;
-		case XK_e:
-			gl.exp.pos[0] = 200.0;
-			gl.exp.pos[1] = -60.0;
-			gl.exp.pos[2] =   0.0;
-			timers.recordTime(&gl.exp.time);
-			gl.exp.onoff ^= 1;
-			break;
-		case XK_f:
-			gl.exp44.pos[0] = 200.0;
-			gl.exp44.pos[1] = -60.0;
-			gl.exp44.pos[2] =   0.0;
-			timers.recordTime(&gl.exp44.time);
-			gl.exp44.onoff ^= 1;
-			break;
-		case XK_Left:
-			break;
-		case XK_Right:
-			break;
-		case XK_Up:
-			break;
-		case XK_Down:
-			break;
-		case XK_equal:
-			gl.delay -= 0.005;
-			if (gl.delay < 0.005)
-				gl.delay = 0.005;
-			break;
-		case XK_minus:
-			gl.delay += 0.005;
-			break;
-		case XK_Escape:
-			return 1;
-			break;
-	}
-	return 0;
+    if (e->type != KeyPress && e->type != KeyRelease)
+        return 0;
+    int key = XLookupKeysym(&e->xkey, 0); 
+    
+    if (e->type == KeyRelease) {
+        gl.keys[key] = 0;
+        return 0;
+    }   
+    
+    gl.keys[key] = 1;
+
+    switch (key) {
+        case XK_s:
+            screenCapture();
+            break;
+        case XK_m:
+            gl.movie ^= 1;
+            break;
+        case XK_w:
+            timers.recordTime(&timers.walkTime);
+            gl.walk ^= 1;
+            break;
+        case XK_e:
+            gl.exp.pos[0] = 200.0;
+            gl.exp.pos[1] = -60.0;
+            gl.exp.pos[2] = 0.0;
+            timers.recordTime(&gl.exp.time);
+            gl.exp.onoff ^= 1;
+            break;
+        case XK_f:
+            gl.exp44.pos[0] = 200.0;
+            gl.exp44.pos[1] = -60.0;
+            gl.exp44.pos[2] = 0.0;
+            timers.recordTime(&gl.exp44.time);
+            gl.exp44.onoff ^= 1;
+            break;
+        case XK_Left:
+            // Handle left movement
+            break;
+        case XK_Right:
+            // Handle right movement
+            break;
+        case XK_Up:   // Handle UP arrow key press for jump
+        case XK_space:  // Handle spacebar for jump
+            initiateJump(gl.ball_vel, isJumping);
+            break;
+        case XK_Down:
+            // Handle down movement
+            break;
+        case XK_equal:
+            gl.delay -= 0.005;
+            if (gl.delay < 0.005)
+                gl.delay = 0.005;
+            break;
+        case XK_minus:
+            gl.delay += 0.005;
+            break;
+        case XK_Escape:
+            return 1;
+    }   
+
+    return 0;
 }
 
 Flt VecNormalize(Vec vec)
@@ -623,7 +625,10 @@ Flt VecNormalize(Vec vec)
 
 void physics(void)
 {
-	if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
+	//Handle jump physics in main loop
+	handleJump(gl.ball_pos, gl.ball_vel, isJumping); 	
+
+    	if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
 		//man is walking...
 		//when time is up, advance the frame.
 		timers.recordTime(&timers.timeCurrent);
@@ -695,23 +700,32 @@ void physics(void)
 	//Adjust position of ball.
 	//Height of highest tile when ball is?
 	//====================================
-	Flt dd = lev.ftsz[0];
-	int col = (int)((gl.camera[0]+gl.ball_pos[0]) / dd);
-	col = col % lev.ncols;
-	int hgt = 0;
-	for (int i=0; i<lev.nrows; i++) {
-		if (lev.arr[i][col] != ' ') {
-			hgt = (lev.nrows-i) * lev.tilesize[1];
-			break;
-		}
-	}
-	if (gl.ball_pos[1] < (Flt)hgt) {
-		gl.ball_pos[1] = (Flt)hgt;
-		MakeVector(gl.ball_vel, 0, 0, 0);
-	} else {
-		gl.ball_vel[1] -= 0.9;
-	}
-	gl.ball_pos[1] += gl.ball_vel[1];
+    // Adjust position of ball and handle landing
+    Flt dd = lev.ftsz[0];  // Tile size
+    int col = (int)((gl.camera[0] + gl.ball_pos[0]) / dd);
+    col = col % lev.ncols;
+    int hgt = 0;
+        
+    // Find the height of the platform the ball is currently above
+    for (int i = 0; i < lev.nrows; i++) {
+        if (lev.arr[i][col] != ' ') {
+            hgt = (lev.nrows - i) * lev.tilesize[1];
+            break;
+        }
+    }
+    
+    // If the ball is below the platform, place it on the platform
+    if (gl.ball_pos[1] <= (Flt)hgt) {
+        gl.ball_pos[1] = (Flt)hgt;
+        gl.ball_vel[1] = 0.0;
+        isJumping = false;  // Reset jump flag when landing
+    } else {
+        gl.ball_vel[1] += gravity;  // Apply gravity while jumping
+    }   
+    
+    // Update ball's vertical position based on its velocity
+    gl.ball_pos[1] += gl.ball_vel[1];
+
 }
 
 void render(void)
