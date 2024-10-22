@@ -25,6 +25,7 @@
 //#include "ppm.h"
 #include "fonts.h"
 #include "rkhosa.h"
+#include "sbeebe.h"
 
 //defined types
 typedef double Flt;
@@ -922,7 +923,7 @@ void render(void)
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDisable(GL_ALPHA_TEST);
 	}
-	unsigned int c = 0x00ffff44;
+	unsigned int c = 0x00960808;
 	r.bot = gl.yres - 20;
 	r.left = 10;
 	r.center = 0;
@@ -933,6 +934,8 @@ void render(void)
 	ggprint8b(&r, 16, c, "right arrow -> walk right");
 	ggprint8b(&r, 16, c, "left arrow  <- walk left");
 	ggprint8b(&r, 16, c, "frame: %i", gl.walkFrame);
+	ggprint8b(&r, 16, c, "TIME: M: %i :: S: %i ", s.min, s.sec);
+    
 	if (gl.movie) {
 		screenCapture();
 	}
