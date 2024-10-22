@@ -1,6 +1,6 @@
 // cschmiedel.h
 
-#ifndef CSCHMIEDEL_H
+/*#ifndef CSCHMIEDEL_H
 #define CSCHMIEDEL_H
 
 // Declare global health variables
@@ -19,3 +19,4 @@ void checkGameOver();
 void renderText(float x, float y, const char *text, float r, float g, float b);
 
 #endif // CSCHMIEDEL_H
+*/
