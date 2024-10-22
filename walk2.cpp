@@ -27,6 +27,8 @@
 #include "rkhosa.h"
 #include "sbeebe.h"
 
+struct Stopwatch s;
+
 //defined types
 typedef double Flt;
 typedef double Vec[3];
@@ -923,7 +925,7 @@ void render(void)
 		glBindTexture(GL_TEXTURE_2D, 0);
 		glDisable(GL_ALPHA_TEST);
 	}
-	unsigned int c = 0x00960808;
+	unsigned int c = 0x00ffff44;
 	r.bot = gl.yres - 20;
 	r.left = 10;
 	r.center = 0;
