@@ -1,22 +1,22 @@
-// cschmiedel.h
-
-/*#ifndef CSCHMIEDEL_H
+#ifndef CSCHMIEDEL_H
 #define CSCHMIEDEL_H
 
-// Declare global health variables
-extern float currentHealth;
-extern const float maxHealth;
-extern bool gameOver;
+#include <GL/gl.h>
 
-// Function prototypes for health bar
-void initializeHealthBar();
-void drawHealthBar(int xres, int yres);
-void dealDamage(float amount);
-void heal(float amount);
-void checkGameOver();
+class HealthBar {
+private:
+    float maxHealth;
+    float currentHealth;
+    float x, y, width, height;
 
-// Function prototypes for rendering text
-void renderText(float x, float y, const char *text, float r, float g, float b);
+public:
+    HealthBar(float maxHealth = 100.0f, float x =650.0f, float y = 550.0f, float width = 200.0f, float height = 20.0f); 
+    void setHealth(float health);
+    void draw();
+    bool isGameOver() const;
+    float getHealth() const;
+};
 
 #endif // CSCHMIEDEL_H
-*/
+
+
