@@ -7,7 +7,7 @@
 
 typedef float Flt;
 
-void physics(void); 
+
 
 class Level {
 public:
@@ -18,7 +18,8 @@ public:
     Flt tile_base;
     Level();
     void removeCrLf(char *line);
-} lev;
+};
 
 #endif // LEVEL_H
+
 

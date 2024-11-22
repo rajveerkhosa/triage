@@ -32,50 +32,17 @@ Level::Level() {
         }   
         printf("\n");
     }
-} lev; 
+}; 
 
 void Level::removeCrLf(char *line) {
-    char *p = str;
-        while (*p) {
-            if (*p == 10 || *p == 13) {
-                *p = '\0';
-                break;
-            }
-            ++p;
-        }
-    }
+    char *p = line;
+	while (*p) {
+		if (*p == 10 || *p == 13) {
+			*p = '\0';
+			break;
+		}
+		++p;
+	}
 }
 
-void physics(void) {
-    if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
-        // Character is walking...
-        // When time is up, advance the frame.
-        timers.recordTime(&timers.timeCurrent);
-        double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
-        if (timeSpan > gl.delay) {
-            // Advance the frame
-            ++gl.walkFrame;
-            if (gl.walkFrame >= 16)
-                gl.walkFrame -= 16;
-            timers.recordTime(&timers.walkTime);
-        }
-        for (int i = 0; i < 20; i++) {
-            if (gl.keys[XK_Left]) {
-                gl.box[i][0] += 1.0 * (0.05 / gl.delay);
-                if (gl.box[i][0] > gl.xres + 10.0)
-                    gl.box[i][0] -= gl.xres + 10.0;
-                gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-                if (gl.camera[0] < 0.0)
-                    gl.camera[0] = 0.0;
-            } else {
-                gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-                if (gl.box[i][0] < -10.0)
-                    gl.box[i][0] += gl.xres + 10.0;
-                gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-                if (gl.camera[0] < 0.0)
-                    gl.camera[0] = 0.0;
-            }
-        }
-    }
-}
 

@@ -19,8 +19,10 @@
 #include <X11/keysym.h>
 #include <GL/glx.h>
 #include "fonts.h"
-
+#include <map>
 #include "rkhosa.h"
+
+using namespace std;
 
 bool checkCollision(float newX, float newY);
 
@@ -56,10 +58,10 @@ int tileMap[MAP_HEIGHT][MAP_WIDTH] = {
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
+    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
@@ -67,6 +69,8 @@ int tileMap[MAP_HEIGHT][MAP_WIDTH] = {
     {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
     {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 };
+
+Level lev;
 
 class Image {
 public:
@@ -134,18 +138,66 @@ public:
 // Player instance
 Player player;
 
-// Function to render the tile map
-void renderTileMap() {
-    for (int y = 0; y < MAP_HEIGHT; y++) {
-        for (int x = 0; x < MAP_WIDTH; x++) {
-            if (tileMap[y][x] == 1) {
-                // Render platform (e.g., using OpenGL)
-            } else if (tileMap[y][x] == 2) {
-                // Render obstacle (e.g., using OpenGL)
+struct GL_STRUCT
+{
+	GL_STRUCT()
+	{
+		walk = true;
+		xres = 800;
+		yres = 600;
+		delay = 1000/60;
+		camera[0] = 0.0f;
+		camera[1] = 0.0f;
+		camera[2] = -1.0f;
+		walkFrame = 0;
+	
+	}
+	bool walk;
+	int xres;
+	int yres;
+	map<int, bool> keys;
+	int delay;
+	float camera[3];
+	int walkFrame;
+};
+
+GL_STRUCT gl;
+
+/*
+void physics(void) {
+    if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
+        // Character is walking...
+        // When time is up, advance the frame.
+        timers.recordTime(&timers.timeCurrent);
+        double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
+        if (timeSpan > gl.delay) {
+            // Advance the frame
+            ++gl.walkFrame;
+            if (gl.walkFrame >= 16)
+                gl.walkFrame -= 16;
+            timers.recordTime(&timers.walkTime);
+        }
+        for (int i = 0; i < 20; i++) {
+            if (gl.keys[XK_Left]) {
+                gl.box[i][0] += 1.0 * (0.05 / gl.delay);
+                if (gl.box[i][0] > gl.xres + 10.0)
+                    gl.box[i][0] -= gl.xres + 10.0;
+                gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+                if (gl.camera[0] < 0.0)
+                    gl.camera[0] = 0.0;
+            } else {
+                gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
+                if (gl.box[i][0] < -10.0)
+                    gl.box[i][0] += gl.xres + 10.0;
+                gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+                if (gl.camera[0] < 0.0)
+                    gl.camera[0] = 0.0;
             }
         }
     }
 }
+
+
 
 // Function to check for collision
 bool checkCollision(float newX, float newY) {
@@ -218,21 +270,149 @@ void render() {
 
 }
 
-void gameLoop() {
-    while (true) {
-        // Handle input
-        // Apply physics
-        player.applyPhysics();
-        player.move(0.1f); // Example movement
-        // Render
-        render();
-        // Delay or sleep for frame rate control
+
+
+*/
+
+// Function to render the tile map
+void renderTileMap() 
+{
+	float z = -1.0f;
+	float cell_size = gl.xres / (float)MAP_WIDTH;
+    for (int y = 0; y < MAP_HEIGHT; y++) 
+	{
+        for (int x = 0; x < MAP_WIDTH; x++) 
+		{
+            if (tileMap[y][x] == 1) 
+			{
+				glColor3f(1,1,1);
+				glBegin(GL_QUADS);
+                // Render platform (e.g., using OpenGL)
+				glVertex3f(x * cell_size, y * cell_size,  z);
+				glVertex3f((x+1) * cell_size, y * cell_size, z);
+				glVertex3f((x+1) * cell_size, (y+1) * cell_size, z);
+				glVertex3f(x * cell_size, (y+1) * cell_size, z);
+				glEnd();
+
+				glColor3f(1,0,0);
+				glBegin(GL_LINE_LOOP);
+                // Render platform (e.g., using OpenGL)
+				glVertex3f(x * cell_size, y * cell_size,  z);
+				glVertex3f((x+1) * cell_size, y * cell_size, z);
+				glVertex3f((x+1) * cell_size, (y+1) * cell_size, z);
+				glVertex3f(x * cell_size, (y+1) * cell_size, z);
+				glEnd();
+            } 
+			else if (tileMap[y][x] == 2) 
+			{
+                // Render obstacle (e.g., using OpenGL)
+            }
+        }
     }
 }
 
+void render()
+{
+	renderTileMap();
+}
+
+void gameLoop(Display* display, Window win) {
+
+    while (1) 
+	{
+		glMatrixMode(GL_PROJECTION);
+		glLoadIdentity();
+		glOrtho(0.0, gl.xres, 0.0, gl.yres, 1, -1);
+		glMatrixMode(GL_MODELVIEW);
+		glLoadIdentity();
+		
+
+		
+        XEvent xev;
+        XNextEvent(display, &xev);
+
+        if (xev.type == Expose) 
+		{
+            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+
+			// Handle input
+			// Apply physics
+			//player.applyPhysics();
+			//player.move(0.1f); // Example movement
+			// Render
+			render();
+			// Delay or sleep for frame rate control
+
+
+            glXSwapBuffers(display, win);
+        } 
+		else if (xev.type == KeyPress) 
+		{
+            break;
+        }
+    }
+
+}
+
+// Function to create an OpenGL context
+GLXContext createGLContext(Display* display, Window win) {
+    
+    //  To stop error
+    (void)win; 
+    static int visualAttribs[] = { None };
+    int numConfigs;
+    GLXFBConfig* fbConfigs = glXChooseFBConfig(display, DefaultScreen(display), visualAttribs, &numConfigs);
+    if (!fbConfigs) {
+        fprintf(stderr, "Failed to get framebuffer config\n");
+        exit(1);
+    }
+
+    GLXContext context = glXCreateNewContext(display, fbConfigs[0], GLX_RGBA_TYPE, NULL, True);
+    if (!context) {
+        fprintf(stderr, "Failed to create OpenGL context\n");
+        exit(1);
+    }
+
+    XFree(fbConfigs);
+    return context;
+}
+
+// Main function
 int main() {
-    // Initialize graphics, input, etc.
-    gameLoop();
+    Display* display = XOpenDisplay(NULL);
+    if (!display) {
+        fprintf(stderr, "Failed to open X display\n");
+        return 1;
+    }
+
+    Window root = DefaultRootWindow(display);
+
+    XSetWindowAttributes swa;
+    swa.event_mask = ExposureMask | KeyPressMask;
+
+    Window win = XCreateWindow(
+        display, root,
+        0, 0, 800, 600, 0,
+        CopyFromParent, InputOutput,
+        CopyFromParent, CWEventMask,
+        &swa
+    );
+
+    XMapWindow(display, win);
+    XStoreName(display, win, "OpenGL with GLX");
+
+    GLXContext context = createGLContext(display, win);
+    glXMakeCurrent(display, win, context);
+
+    // Game loop
+	gameLoop(display, win);
+
+    glXMakeCurrent(display, None, NULL);
+    glXDestroyContext(display, context);
+    XDestroyWindow(display, win);
+    XCloseDisplay(display);
+
     return 0;
 }
 
