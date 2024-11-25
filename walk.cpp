@@ -15,129 +15,13 @@
 #include <unistd.h>
 #include <time.h>
 #include <math.h>
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <GL/glx.h>
-#include "fonts.h"
 #include <map>
+#include "fonts.h"
 #include "rkhosa.h"
 
 using namespace std;
 
-bool checkCollision(float newX, float newY);
-
-
-//defined types
-//typedef double Flt;
-typedef double Vec[3];
-typedef Flt Matrix[4][4];
-
-//macros
-#define rnd() (((double)rand())/(double)RAND_MAX)
-#define random(a) (rand()%a)
-#define MakeVector(x, y, z, v) (v)[0]=(x),(v)[1]=(y),(v)[2]=(z)
-#define VecCopy(a,b) (b)[0]=(a)[0];(b)[1]=(a)[1];(b)[2]=(a)[2]
-#define VecDot(a,b) ((a)[0]*(b)[0]+(a)[1]*(b)[1]+(a)[2]*(b)[2])
-#define VecSub(a,b,c) (c)[0]=(a)[0]-(b)[0]; \\
-                      (c)[1]=(a)[1]-(b)[1]; \\
-                      (c)[2]=(a)[2]-(b)[2]
-
-//constants
-const float timeslice = 1.0f;
-const float gravity = -0.2f;
-const float friction = 0.9f;
-const float jumpStrength = 5.0f;
-#define ALPHA 1
-
-// Tile map dimensions
-const int MAP_WIDTH = 20;
-const int MAP_HEIGHT = 15;
-int tileMap[MAP_HEIGHT][MAP_WIDTH] = {
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-    {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
-};
-
-Level lev;
-
-class Image {
-public:
-    int width, height;
-    unsigned char *data;
-    ~Image() { delete [] data; }
-    Image(const char *fname) {
-        if (fname[0] == '\0')
-            return;
-        char name[40];
-        strcpy(name, fname);
-        int slen = strlen(name);
-        name[slen-4] = '\0';
-        char ppmname[80];
-        sprintf(ppmname,"%s.ppm", name);
-        char ts[100];
-        sprintf(ts, "convert %s %s", fname, ppmname);
-        system(ts);
-        // Load image data...
-    }
-};
-
-class Player {
-public:
-    Vec pos, vel;
-    bool onGround;
-
-    Player() {
-        pos[0] = 5.0; pos[1] = 5.0; pos[2] = 0.0;
-        vel[0] = vel[1] = vel[2] = 0.0;
-        onGround = false;
-    }
-
-    void applyPhysics() {
-        if (!onGround) {
-            vel[1] += gravity;
-        } else {
-            vel[0] *= friction;
-        }
-    }
-
-    void jump() {
-        if (onGround) {
-            vel[1] = jumpStrength;
-            onGround = false;
-        }
-    }
-
-    void move(float xInput) {
-        vel[0] += xInput;
-        pos[0] += vel[0];
-        pos[1] += vel[1];
-
-        if (checkCollision(pos[0], pos[1])) {
-            // Handle collision response
-            pos[0] -= vel[0];
-            pos[1] -= vel[1];
-            vel[0] = 0;
-            vel[1] = 0;
-            onGround = true;
-        }
-    }
-};
-
-// Player instance
-Player player;
-
+// opengl status
 struct GL_STRUCT
 {
 	GL_STRUCT()
@@ -145,7 +29,7 @@ struct GL_STRUCT
 		walk = true;
 		xres = 800;
 		yres = 600;
-		delay = 1000/60;
+		delay = 1000/30;
 		camera[0] = 0.0f;
 		camera[1] = 0.0f;
 		camera[2] = -1.0f;
@@ -161,52 +45,24 @@ struct GL_STRUCT
 	int walkFrame;
 };
 
+
+
+
+
+// level instance
+Level lev;
+
+// Player instance
+Player player;
+
+// opengl instance
 GL_STRUCT gl;
 
 /*
-void physics(void) {
-    if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) {
-        // Character is walking...
-        // When time is up, advance the frame.
-        timers.recordTime(&timers.timeCurrent);
-        double timeSpan = timers.timeDiff(&timers.walkTime, &timers.timeCurrent);
-        if (timeSpan > gl.delay) {
-            // Advance the frame
-            ++gl.walkFrame;
-            if (gl.walkFrame >= 16)
-                gl.walkFrame -= 16;
-            timers.recordTime(&timers.walkTime);
-        }
-        for (int i = 0; i < 20; i++) {
-            if (gl.keys[XK_Left]) {
-                gl.box[i][0] += 1.0 * (0.05 / gl.delay);
-                if (gl.box[i][0] > gl.xres + 10.0)
-                    gl.box[i][0] -= gl.xres + 10.0;
-                gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-                if (gl.camera[0] < 0.0)
-                    gl.camera[0] = 0.0;
-            } else {
-                gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-                if (gl.box[i][0] < -10.0)
-                    gl.box[i][0] += gl.xres + 10.0;
-                gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-                if (gl.camera[0] < 0.0)
-                    gl.camera[0] = 0.0;
-            }
-        }
-    }
-}
 
 
 
-// Function to check for collision
-bool checkCollision(float newX, float newY) {
-    int tileX = (int)newX;
-    int tileY = (int)newY;
-    if (tileX < 0 || tileX >= MAP_WIDTH || tileY < 0 || tileY >= MAP_HEIGHT)
-        return true;
-    return tileMap[tileY][tileX] != 0;
-}
+
 
 // Rendering and game loop
 void render() {
@@ -274,49 +130,92 @@ void render() {
 
 */
 
-// Function to render the tile map
-void renderTileMap() 
-{
-	float z = -1.0f;
-	float cell_size = gl.xres / (float)MAP_WIDTH;
-    for (int y = 0; y < MAP_HEIGHT; y++) 
-	{
-        for (int x = 0; x < MAP_WIDTH; x++) 
-		{
-            if (tileMap[y][x] == 1) 
-			{
-				glColor3f(1,1,1);
-				glBegin(GL_QUADS);
-                // Render platform (e.g., using OpenGL)
-				glVertex3f(x * cell_size, y * cell_size,  z);
-				glVertex3f((x+1) * cell_size, y * cell_size, z);
-				glVertex3f((x+1) * cell_size, (y+1) * cell_size, z);
-				glVertex3f(x * cell_size, (y+1) * cell_size, z);
-				glEnd();
 
-				glColor3f(1,0,0);
-				glBegin(GL_LINE_LOOP);
-                // Render platform (e.g., using OpenGL)
-				glVertex3f(x * cell_size, y * cell_size,  z);
-				glVertex3f((x+1) * cell_size, y * cell_size, z);
-				glVertex3f((x+1) * cell_size, (y+1) * cell_size, z);
-				glVertex3f(x * cell_size, (y+1) * cell_size, z);
-				glEnd();
-            } 
-			else if (tileMap[y][x] == 2) 
-			{
-                // Render obstacle (e.g., using OpenGL)
-            }
+struct timespec prevTime, currTime;
+
+long calculateTimeDifference(struct timespec start, struct timespec end) 
+{ 
+	long secondsDiff = end.tv_sec - start.tv_sec; 
+	long nanoSecondsDiff = end.tv_nsec - start.tv_nsec; 
+	long microSecondsDiff = (secondsDiff * 1000000) + (nanoSecondsDiff / 1000); 
+	return microSecondsDiff; 
+}
+
+void physics(void) 
+{
+	printf(".");
+    if (gl.walk || gl.keys[XK_Right] || gl.keys[XK_Left]) 
+	{
+        // Character is walking...
+        // When time is up, advance the frame.
+		clock_gettime(CLOCK_REALTIME, &currTime);
+        long timeSpan = calculateTimeDifference(prevTime, currTime);
+		printf("timeSpan = %ld\n", timeSpan);
+        if (timeSpan > gl.delay) 
+		{
+			player.nextFrame();
         }
+		if (gl.keys[32]) // space
+		{
+			printf("jump\n"); fflush(stdout);
+			player.jump();
+		}
+		if (gl.keys[XK_Left]) 
+		{
+			//gl.box[i][0] += 1.0 * (0.05 / gl.delay);
+			//if (gl.box[i][0] > gl.xres + 10.0)
+			//    gl.box[i][0] -= gl.xres + 10.0;
+			//gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+			//if (gl.camera[0] < 0.0)
+			//    gl.camera[0] = 0.0;
+			player.move(-0.1f, lev);
+
+		} 
+		else if (gl.keys[XK_Right]) 
+		{
+			//gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
+			//if (gl.box[i][0] < -10.0)
+			//    gl.box[i][0] += gl.xres + 10.0;
+			//gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+			//if (gl.camera[0] < 0.0)
+			//    gl.camera[0] = 0.0;
+			player.move(+0.1f, lev);
+		}
+		else
+		{
+			player.move(0.0f, lev);
+		}
+		printf("%.2f %.2f\r", player.pos[0], player.pos[1]);
     }
 }
 
 void render()
 {
-	renderTileMap();
+    // Clear screen
+	printf("clear\n"); fflush(stdout);
+
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+
+
+	// Handle input
+	// Apply physics
+	//player.applyPhysics();
+	//player.move(0.1f); // Example movement
+	// Render
+	printf("lev.render\n"); fflush(stdout);
+	lev.render(gl.xres, gl.yres);
+	printf("player.render\n"); fflush(stdout);
+	player.render(gl.xres, gl.yres);
+	printf("end render\n"); fflush(stdout);
 }
 
-void gameLoop(Display* display, Window win) {
+void update()
+{
+	physics();
+}
+
+void gameLoop(Display* display, Window win) 
+{
 
     while (1) 
 	{
@@ -326,50 +225,69 @@ void gameLoop(Display* display, Window win) {
 		glMatrixMode(GL_MODELVIEW);
 		glLoadIdentity();
 		
-
+		update();
+		render();
+		glXSwapBuffers(display, win);
 		
-        XEvent xev;
-        XNextEvent(display, &xev);
-
-        if (xev.type == Expose) 
+		
+		if (XPending(display))
 		{
-            glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+			XEvent xev;
+			XNextEvent(display, &xev);
 
+			if (xev.type == Expose) 
+			{
+				// Delay or sleep for frame rate control
+			} 
+			else if (xev.type == KeyPress) 
+			{
+				KeySym key = XLookupKeysym(&xev.xkey, 0); 
+				if (key != NoSymbol) 
+				{ 
+					printf("Key pressed: %s, %lx\n", XKeysymToString(key), key); 
+				} 
+				else 
+				{ 
+					printf("Key pressed: unknown\n"); 
+				}
+				gl.keys[key] = true;
+			}
+			else if (xev.type == KeyRelease) 
+			{
+				KeySym key = XLookupKeysym(&xev.xkey, 0); 
+				if (key != NoSymbol) 
+				{ 
+					printf("Key released: %s, %lx\n", XKeysymToString(key), key); 
+				} 
+				else 
+				{ 
+					printf("Key released: unknown\n"); 
+				}
+				gl.keys[key] = false;
+				if (key == ESC)	
+					break;
+			}
+		}
 
-			// Handle input
-			// Apply physics
-			//player.applyPhysics();
-			//player.move(0.1f); // Example movement
-			// Render
-			render();
-			// Delay or sleep for frame rate control
-
-
-            glXSwapBuffers(display, win);
-        } 
-		else if (xev.type == KeyPress) 
-		{
-            break;
-        }
     }
 
 }
 
 // Function to create an OpenGL context
-GLXContext createGLContext(Display* display, Window win) {
-    
-    //  To stop error
-    (void)win; 
+GLXContext createGLContext(Display* display) 
+{
     static int visualAttribs[] = { None };
     int numConfigs;
     GLXFBConfig* fbConfigs = glXChooseFBConfig(display, DefaultScreen(display), visualAttribs, &numConfigs);
-    if (!fbConfigs) {
+    if (!fbConfigs) 
+	{
         fprintf(stderr, "Failed to get framebuffer config\n");
         exit(1);
     }
 
     GLXContext context = glXCreateNewContext(display, fbConfigs[0], GLX_RGBA_TYPE, NULL, True);
-    if (!context) {
+    if (!context) 
+	{
         fprintf(stderr, "Failed to create OpenGL context\n");
         exit(1);
     }
@@ -379,9 +297,11 @@ GLXContext createGLContext(Display* display, Window win) {
 }
 
 // Main function
-int main() {
+int main() 
+{
     Display* display = XOpenDisplay(NULL);
-    if (!display) {
+    if (!display) 
+	{
         fprintf(stderr, "Failed to open X display\n");
         return 1;
     }
@@ -389,9 +309,10 @@ int main() {
     Window root = DefaultRootWindow(display);
 
     XSetWindowAttributes swa;
-    swa.event_mask = ExposureMask | KeyPressMask;
+    swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
 
-    Window win = XCreateWindow(
+    Window win = XCreateWindow
+	(
         display, root,
         0, 0, 800, 600, 0,
         CopyFromParent, InputOutput,
@@ -400,14 +321,20 @@ int main() {
     );
 
     XMapWindow(display, win);
-    XStoreName(display, win, "OpenGL with GLX");
+    XStoreName(display, win, "Jumping game");
 
-    GLXContext context = createGLContext(display, win);
+    GLXContext context = createGLContext(display);
     glXMakeCurrent(display, win, context);
 
+	lev.loadLevel();
+
+	player.init();
+	
+	clock_gettime(CLOCK_REALTIME, &prevTime);
     // Game loop
 	gameLoop(display, win);
 
+	// destroying opengl and window
     glXMakeCurrent(display, None, NULL);
     glXDestroyContext(display, context);
     XDestroyWindow(display, win);
