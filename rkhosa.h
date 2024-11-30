@@ -2,19 +2,37 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
+//#define WINDOWS_code
+#define LINUX_X11_code
+
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <X11/Xlib.h>
-#include <X11/keysym.h>
-#include <GL/glx.h>
+
+#ifdef WINDOWS_code
+	#include <gl/freeglut.h>
+	#define ESC 27	//scape
+	#define XK_Right GLUT_KEY_RIGHT
+	#define XK_Left  GLUT_KEY_LEFT
+	#define XK_Up    GLUT_KEY_UP
+#else
+	#include <X11/Xlib.h>
+	#include <X11/keysym.h>
+	#include <GL/glx.h>
+	#include <unistd.h>
+	#define ESC 0xff1b	//scape
+#endif
+
+#include <algorithm>
+#include <vector>
+
+using namespace std;
 
 //defined types
-typedef double Vec[3];
+typedef float Vec[3];
 typedef float Matrix[4][4];
 
 //macros
-#define ESC 0xff1b	//scape
 #define rnd() (((double)rand())/(double)RAND_MAX)
 #define random(a) (rand()%a)
 #define MakeVector(x, y, z, v) (v)[0]=(x),(v)[1]=(y),(v)[2]=(z)
@@ -26,43 +44,186 @@ typedef float Matrix[4][4];
 
 #define MAX_WIDTH  20
 #define MAX_HEIGHT 15
-#define MAX_LEVELS  1
+#define MAX_LEVELS  5
 
 // COLLISION CODES
 #define MAP_COLLITION_NONE 0
 #define MAP_COLLITION_X 1
 #define MAP_COLLITION_Y 2
 
+#define MAX_SPRITES 6
+#define BULLET_ENERGY_DAMAGE 25
+#define ENEMY_ENERGY_DAMAGE 5
+
 #define ALPHA 1
+
+enum
+{
+	CELL_EMPTY = 0,
+	CELL_WALL = 1,
+	CELL_PLAYER = 2,
+	CELL_MUSHROOM = 3,
+	CELL_STAR = 4,
+	CELL_SPIKES = 5,
+	CELL_COIN = 6,
+	CELL_DOOR = 9,
+};
+
+enum
+{
+	DATA_MUSHROOM = 0,
+	DATA_DOOR = 1,
+	DATA_STAR = 2,
+	DATA_SPIKES = 3,
+	DATA_COIN = 4,
+	DATA_PROJECTILE = 5
+};
+
 //constants
 const float timeslice = 1.0f;
-const float gravity = -0.2f;
+const float gravity = -0.05f;
 const float friction = 0.9f;
-const float jumpStrength = 5.0f;
+const float jumpStrength = 0.6f;
+const float player_half = 0.8f;
+const float move_speed = 0.03f;
 
 typedef float Flt;
 
 static 	int tileMap[MAX_LEVELS][MAX_HEIGHT][MAX_WIDTH] = {
 	{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 3, 0, 3, 0, 3, 0, 0, 0, 6, 6, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 6, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 4, 0, 1, 1, 1, 1, 1, 0, 6, 0, 0, 1},
+		{1, 0, 5, 6, 0, 6, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 9, 1},
+		{1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1},
+		{1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 1, 1, 0, 6, 0, 6, 0, 6, 0, 6, 0, 0, 0, 0, 0, 2, 0, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 6, 0, 0, 0, 1},
+		{1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 0, 6, 0, 6, 0, 6, 0, 6, 0, 1, 0, 4, 0, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	},
+	{
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 5, 0, 0, 0, 0, 9, 1},
+		{1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1},
+		{1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1},
+		{1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1},
+		{1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	},
+		{
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1},
+		{1, 9, 0, 0, 0, 6, 0, 0, 0, 6, 0, 0, 0, 6, 5, 0, 0, 0, 0, 1},
+		{1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 2, 0, 1},
+		{1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+		{1, 1, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1},
+		{1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 6, 1, 1, 0, 0, 3, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 6, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 6, 0, 1},
+		{1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+		{1, 3, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6, 0, 1},
+		{1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 1, 1, 0, 6, 0, 6, 0, 0, 3, 5, 0, 0, 6, 0, 6, 0, 6, 0, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	},
+		{
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 3, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 0, 6, 0, 9, 1},
+		{1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 3, 6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 1},
+		{1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 6, 0, 4, 0, 6, 5, 6, 0, 6, 0, 6, 5, 0, 2, 0, 1},
+		{1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1},
 		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
-		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 6, 0, 6, 0, 6, 0, 6, 0, 0, 0, 0, 6, 0, 6, 0, 6, 0, 6, 1},
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+	},
+		{
+		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 2, 0, 1},
+		{1, 9, 6, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 1, 1, 0, 6, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 6, 0, 0, 0, 1},
+		{1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1},
+		{1, 5, 0, 0, 0, 0, 6, 0, 0, 6, 6, 0, 0, 0, 6, 1, 0, 0, 0, 1},
+		{1, 0, 0, 0, 6, 1, 3, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1},
+		{1, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1, 4, 4, 0, 0, 0, 0, 0, 0, 1},
+		{1, 0, 0, 1, 1, 0, 0, 4, 4, 1, 1, 1, 1, 0, 0, 1, 1, 0, 0, 1},
+		{1, 3, 3, 1, 1, 3, 3, 1, 1, 1, 1, 1, 1, 3, 3, 1, 1, 3, 3, 1},
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
 	}
 };
 
-void abortGame(const char *msg);
+class Box2D;
+class Sprite;
+class Image;
+class Level;
+class Player;
+class Projectile;
+
+class SpriteInfo
+{
+public:
+	Image* texture;
+	int im_width;
+	int im_height;
+	float cell_width;
+	float cell_height;
+	char filelame[100];
+
+
+	~SpriteInfo();
+
+};
+
+void abortGame(const char* msg);
+
+class Box2D
+{
+public:
+	float x0;
+	float y0;
+	float x1;
+	float y1;
+
+	Box2D();
+
+	Box2D(float x0, float y0, float x1, float y1);
+	
+	bool isBox() const;
+	
+	Box2D Union(const Box2D& b) const;
+
+	bool inside(float x, float y);
+	
+	float area();
+	
+	Box2D Inter(const Box2D& b) const;
+	
+};
 
 class Image 
 {
@@ -93,24 +254,22 @@ class Level
 {
 public:
     Level();
-
-	int operator() (int x, int y);
+	Image *backGround;
+	int & operator() (int x, int y);
 	void render(int w, int h);
  	int current_level;
-	void loadLevel();
+	void loadLevel(vector<Sprite> &sprites);
     int a[MAX_HEIGHT][MAX_WIDTH];
 
 	// return the collision code (0, 1, 2, 3)
-	int checkCollision(float oldX, float oldY, float newX, float newY);
-	
-	int curr_level;
+	// int checkCollision(float oldX, float oldY, float newX, float newY, float spr_w, float spr_h);
+	bool checkCollision(float oldX, float oldY, float newX, float newY);
 	
 	// original player position in the map´
 	int srcPlayerX;
 	int srcPlayerY;
 
 };
-
 
 class Player 
 {
@@ -121,6 +280,8 @@ public:
 	int energy;
 	int lives;
 	Image *sprite;
+	int lastDir; // 0=left, 1=right
+	int score;
 
     Player();
 	
@@ -139,7 +300,48 @@ public:
 	void nextFrame();
 
 	void render(int screenW, int screenH);
-};
-#endif // LEVEL_H
 
+	void getBox(Box2D& b);
+
+
+};
+
+
+
+class Sprite
+{
+public:
+	float x, y;
+	int spriteIndex;
+
+	static SpriteInfo data[MAX_SPRITES];
+
+	Sprite();
+	~Sprite();
+	virtual void set(float x, float y, int spriteIndex);
+	void moveTo(float x, float y);
+	float collide_area(Player& p);
+	bool collide(Player& p);
+	float collide_area(int x, int y);
+	virtual void render(int screenW, int screenH);
+	void getBox(Box2D& b);
+};
+
+
+class Projectile : public Sprite
+{
+public:
+	float speed; 
+	bool dir;		// true = right, false= left
+	bool proj_type; // 0=player, 1=enemy
+
+	Projectile(float x, float y, float speed, bool dir, bool proj_type);
+
+	bool update(float deltaTime, Level& level, Player& player);
+
+	void render(int screenW, int screenH) const;
+};
+
+
+#endif // LEVEL_H
 

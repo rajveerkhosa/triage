@@ -14,4 +14,3 @@ rkhosa.o: rkhosa.cpp rkhosa.h
 
 clean:
 	rm -f walk *.o
-
