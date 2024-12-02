@@ -3,7 +3,7 @@
 //author:  Gordon Griesel
 //date:    summer 2017 - 2018
 //
-//Modified: [Your Name] - [Date]
+//Modified: Rajveer Khosa - November 2024
 //Added level design, collision detection, and basic physics engine.
 //
 //Walk cycle using a sprite sheet.
@@ -24,6 +24,7 @@
 
 using namespace std;
 
+//  Defines game states to control flow
 enum
 {
 	Start_Screen = 0,
@@ -37,23 +38,26 @@ struct GL_STRUCT
 {
 	GL_STRUCT()
 	{
+        //  Tracks the current game state
 		play_mode = Start_Screen;
-		xres = 800;
+		
+        //  Screen resolution
+        xres = 800;
 		yres = 600;
 #ifdef LINUX_X11_code
 		delay = 100;
 		projectile_delay = delay * 5;
 		player_projectile_delay = delay * 3;
 #else
-		delay = 1000;
+		delay = 1000;   //  Controls frame rate
 		projectile_delay = delay * 5000;
 		player_projectile_delay = delay * 1000;
 #endif
-		camera[0] = 0.0f;
+		camera[0] = 0.0f;   //  Virtual camera position for scrolling
 		camera[1] = 0.0f;
 		camera[2] = -1.0f;
-		walkFrame = 0;
-		generateProjectile = false;
+		walkFrame = 0;  //  Current animation frame 
+		generateProjectile = false; //Tracks if a new projectile should be generated
 		space_pending = false;
 	}
 	int play_mode;
@@ -69,7 +73,7 @@ struct GL_STRUCT
 	bool generateProjectile;
 };
 
-
+//  Predefines UI textures for the game
 SpriteInfo text_items[8] = {
 	{NULL,128, 64, 2, 1, "images/lives128x64x4.raw"},
 	{NULL,128, 64, 2, 1, "images/score128x64x4.raw"},
@@ -83,7 +87,7 @@ SpriteInfo text_items[8] = {
 
 
 
-// level instance
+// Current Level
 Level lev;
 
 // Player instance
@@ -92,7 +96,10 @@ Player player;
 // opengl instance
 GL_STRUCT gl;
 
+//  Stores interactive objects
 vector<Sprite> sprites;
+
+//  Stores projectiles (player or enemy)
 vector<Projectile> projectiles;
 
 /*
@@ -170,6 +177,8 @@ void render() {
 
 struct timespec prevTime, currTime, projectileTime, playerProjectileTime;
 
+//  Calculates the difference between two timestamps
+//  Used to control frame rates and projectile delays
 long calculateTimeDifference(struct timespec start, struct timespec end) 
 { 
 	long secondsDiff = end.tv_sec - start.tv_sec; 
@@ -178,7 +187,7 @@ long calculateTimeDifference(struct timespec start, struct timespec end)
 	return microSecondsDiff; 
 }
 
-
+//  Updates physics (e.g., player movement and jumping)
 void physics(void)
 {
 	// Character is walking...
@@ -348,7 +357,7 @@ void drawNumber(int x, int y, int number)
 	glDisable(GL_BLEND);
 }
 
-
+//  Draws the current game frame
 void render()
 {
 	// Clear screen
@@ -359,10 +368,13 @@ void render()
 	// matrix
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
+    //  2D orthographic projection
 	glOrtho(0.0, gl.xres, 0.0, gl.yres, 1, -1);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
 
+    //  Depending on play_mode, it renders the start screen, 
+    //  pause screen, or active gam
 	if (gl.play_mode == Start_Screen)
 	{
 		if (text_items[7].texture == NULL)
@@ -570,7 +582,7 @@ void update()
 
 
 #ifdef LINUX_X11_code
-
+//  Implements the main game loop
 void gameLoop(Display* display, Window win) 
 {
 

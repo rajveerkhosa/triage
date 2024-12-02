@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 
+//Stops the game if an error occurs
 void abortGame(const char *msg)
 {
 	printf("%s\nPress enter to finish-->", msg);
@@ -11,7 +12,8 @@ void abortGame(const char *msg)
 	exit(1);
 }
 
-
+//  Ensures proper cleanup by deleting dynamically 
+//  allocated textures associated with a sprite.
 SpriteInfo::~SpriteInfo()
 {
 
@@ -19,12 +21,14 @@ SpriteInfo::~SpriteInfo()
 		delete texture;
 }
 
+//  Default Constructor: Initializes a non-valid box
 Box2D::Box2D()
 {
 	x0 = y0 = 0;
 	x1 = y1 = -1;
 }
 
+//  Parameterized Constructor
 Box2D::Box2D(float x0, float y0, float x1, float y1)
 {
 	this->x0 = x0;
@@ -42,6 +46,7 @@ bool Box2D::isBox() const
 	return true;
 }
 
+//  Creates a new box that encompasses both the current box and b
 Box2D Box2D::Union(const Box2D& b) const
 {
 	float minx, miny, maxx, maxy;
@@ -100,7 +105,7 @@ Box2D Box2D::Inter(const Box2D& b) const
 
 ////////////////////////// IMAGE /////////////////////
 
-
+//  Cleans up texture data and deletes the OpenGL texture ID
 void Image::free()
 {
 	if (data)
@@ -199,7 +204,8 @@ void Image::unset()
 
 //////////////////////////// LEVEL /////////////////////////////////
 
-
+//  Initializes the level's default state with no 
+//  background or starting position.
 Level::Level() 
 {
 	current_level = -1;
@@ -208,6 +214,9 @@ Level::Level()
 	backGround = NULL;
 };
 
+//  Loads the current level's background and tiles, 
+//  initializing sprites like coins, doors, or spikes 
+//  based on the tile map.
 void Level::loadLevel(vector<Sprite>& sprites)
 {
 	current_level = (current_level + 1) % MAX_LEVELS;
@@ -376,7 +385,7 @@ void Level::render(int w, int)
 
 /////////////////////// PLAYER /////////////////////////
 
-
+//  Sets the sprite's position and texture.
 Player::Player() 
 {
 	pos[0] = 3.0; pos[1] = 4.0; pos[2] = 0.0;
@@ -585,6 +594,9 @@ void Player::getBox(Box2D& b)
 
 ///////////////////////////// SPRITE /////////////////////////////////
 
+//  Sprite class manages objects like collectibles (coins, stars), 
+//  obstacles (spikes), or interactive elements (doors)
+
 SpriteInfo Sprite::data[MAX_SPRITES] = {
 	{NULL, 64, 64, 1, 1, "images/mushroom64x64x4.raw"},
 	{NULL, 64,128, 1, 2, "images/door64x128x4.raw"},
@@ -660,6 +672,7 @@ float Sprite::collide_area(int x, int y)
 	return i.area();
 }
 
+//  Renders a sprite on the screen by mapping its texture to a quad
 void Sprite::render(int screenW, int screenH)
 {
 	data[spriteIndex].texture->set();
@@ -694,6 +707,10 @@ void Sprite::getBox(Box2D& b)
 
 
 //////////////////////////   bullet projectile /////////////////////////
+
+
+//  Manages bullets or projectiles fired by the player or enemies.
+//  Initializes a projectile at a given position, speed, and direction (dir)
 Projectile::Projectile(float x, float y, float speed, bool dir, bool proj_type) : Sprite()
 {
 	this->x = x;
@@ -711,6 +728,8 @@ Projectile::Projectile(float x, float y, float speed, bool dir, bool proj_type) 
 	}
 }
 
+//  Updates projectile position, checks for collisions with 
+//  the player, and applies damage if necessary
 bool Projectile::update(float deltaTime, Level& level, Player& player)
 {
 	if (dir)
@@ -737,6 +756,9 @@ bool Projectile::update(float deltaTime, Level& level, Player& player)
 				player.energy = 0;
 
 		}
+
+        //  returns true if the projectile should be removed 
+        //  (e.g., after hitting the player)
 		return true;
 	}
 

@@ -42,26 +42,29 @@ typedef float Matrix[4][4];
                       (c)[1]=(a)[1]-(b)[1]; \\
                       (c)[2]=(a)[2]-(b)[2]
 
+//  Define the maximum dimensions for the 
+//  game's tile map and the number of levels.
 #define MAX_WIDTH  20
 #define MAX_HEIGHT 15
 #define MAX_LEVELS  5
 
-// COLLISION CODES
-#define MAP_COLLITION_NONE 0
-#define MAP_COLLITION_X 1
-#define MAP_COLLITION_Y 2
+//  Constants for collision detection 
+#define MAP_COLLITION_NONE 0 // No collision
+#define MAP_COLLITION_X 1    // Collision in x-axis 
+#define MAP_COLLITION_Y 2    // Collision in y-axis
 
 #define MAX_SPRITES 6
-#define BULLET_ENERGY_DAMAGE 25
-#define ENEMY_ENERGY_DAMAGE 5
+#define BULLET_ENERGY_DAMAGE 25 //  damage caused by bullets
+#define ENEMY_ENERGY_DAMAGE 5   //  damage caused by enemy collisions
 
 #define ALPHA 1
 
+//  Maps tile types to integer values for the level's tile map
 enum
 {
 	CELL_EMPTY = 0,
 	CELL_WALL = 1,
-	CELL_PLAYER = 2,
+	CELL_PLAYER = 2,    //  Player starting position
 	CELL_MUSHROOM = 3,
 	CELL_STAR = 4,
 	CELL_SPIKES = 5,
@@ -69,6 +72,7 @@ enum
 	CELL_DOOR = 9,
 };
 
+//  Maps sprite data types to integer values
 enum
 {
 	DATA_MUSHROOM = 0,
@@ -80,15 +84,17 @@ enum
 };
 
 //constants
-const float timeslice = 1.0f;
+const float timeslice = 1.0f;   //  Time step for physics calculations
 const float gravity = -0.05f;
 const float friction = 0.9f;
 const float jumpStrength = 0.6f;
+//  Half the width of the player for collision calculations
 const float player_half = 0.8f;
 const float move_speed = 0.03f;
 
 typedef float Flt;
 
+//  Tile Maps
 static 	int tileMap[MAX_LEVELS][MAX_HEIGHT][MAX_WIDTH] = {
 	{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -187,7 +193,8 @@ class Projectile;
 class SpriteInfo
 {
 public:
-	Image* texture;
+	//  Pointer to an image used as the texture for the sprite
+    Image* texture;
 	int im_width;
 	int im_height;
 	float cell_width;
@@ -204,6 +211,7 @@ void abortGame(const char* msg);
 class Box2D
 {
 public:
+    // Coordinates for the bounding box
 	float x0;
 	float y0;
 	float x1;
@@ -213,7 +221,7 @@ public:
 
 	Box2D(float x0, float y0, float x1, float y1);
 	
-	bool isBox() const;
+	bool isBox() const; // Checks if the box dimensions are valid
 	
 	Box2D Union(const Box2D& b) const;
 
@@ -229,7 +237,7 @@ class Image
 {
 public:
     int width, height, depth;
-    unsigned char *data;
+    unsigned char *data;    //  Pointer to pixel data
 	GLuint id;
 	
     Image(const char *fname, int width, int height, int depth) ;
@@ -254,15 +262,16 @@ class Level
 {
 public:
     Level();
-	Image *backGround;
-	int & operator() (int x, int y);
+	Image *backGround;  // Pointer to the background image
+	int & operator() (int x, int y);    // Overload to access tile values in the map
 	void render(int w, int h);
  	int current_level;
 	void loadLevel(vector<Sprite> &sprites);
     int a[MAX_HEIGHT][MAX_WIDTH];
 
 	// return the collision code (0, 1, 2, 3)
-	// int checkCollision(float oldX, float oldY, float newX, float newY, float spr_w, float spr_h);
+	// int checkCollision(float oldX, float oldY, float newX, float newY, 
+    // float spr_w, float spr_h);
 	bool checkCollision(float oldX, float oldY, float newX, float newY);
 	
 	// original player position in the map´
@@ -279,7 +288,7 @@ public:
 	int walkFrame;
 	int energy;
 	int lives;
-	Image *sprite;
+	Image *sprite; //   Pointer to the player's sprite image
 	int lastDir; // 0=left, 1=right
 	int score;
 
@@ -301,7 +310,7 @@ public:
 
 	void render(int screenW, int screenH);
 
-	void getBox(Box2D& b);
+	void getBox(Box2D& b);  // Returns the player's bounding box
 
 
 };
@@ -318,9 +327,9 @@ public:
 
 	Sprite();
 	~Sprite();
-	virtual void set(float x, float y, int spriteIndex);
+	virtual void set(float x, float y, int spriteIndex);// Sets sprite properties
 	void moveTo(float x, float y);
-	float collide_area(Player& p);
+	float collide_area(Player& p);  // Calculates collision overlap with player
 	bool collide(Player& p);
 	float collide_area(int x, int y);
 	virtual void render(int screenW, int screenH);
