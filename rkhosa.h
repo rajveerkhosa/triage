@@ -2,26 +2,22 @@
 #ifndef LEVEL_H
 #define LEVEL_H
 
-//#define WINDOWS_code
-#define LINUX_X11_code
 
 #include <memory.h>
 #include <stdlib.h>
 #include <stdio.h>
 
-#ifdef WINDOWS_code
-	#include <gl/freeglut.h>
-	#define ESC 27	//scape
-	#define XK_Right GLUT_KEY_RIGHT
-	#define XK_Left  GLUT_KEY_LEFT
-	#define XK_Up    GLUT_KEY_UP
-#else
-	#include <X11/Xlib.h>
-	#include <X11/keysym.h>
-	#include <GL/glx.h>
-	#include <unistd.h>
-	#define ESC 0xff1b	//scape
-#endif
+#include <X11/Xlib.h>
+#include <X11/keysym.h>
+#include <GL/glx.h>
+#include <unistd.h>
+#define ESC 0xff1b	//scape
+//constants
+const float gravity = -0.03f;
+const float friction = 0.9f;
+const float jumpStrength = 0.6f;
+const float player_half = 0.8f;
+const float move_speed = 0.02f;
 
 #include <algorithm>
 #include <vector>
@@ -42,29 +38,26 @@ typedef float Matrix[4][4];
                       (c)[1]=(a)[1]-(b)[1]; \\
                       (c)[2]=(a)[2]-(b)[2]
 
-//  Define the maximum dimensions for the 
-//  game's tile map and the number of levels.
 #define MAX_WIDTH  20
 #define MAX_HEIGHT 15
 #define MAX_LEVELS  5
 
-//  Constants for collision detection 
-#define MAP_COLLITION_NONE 0 // No collision
-#define MAP_COLLITION_X 1    // Collision in x-axis 
-#define MAP_COLLITION_Y 2    // Collision in y-axis
+// COLLISION CODES
+#define MAP_COLLITION_NONE 0
+#define MAP_COLLITION_X 1
+#define MAP_COLLITION_Y 2
 
 #define MAX_SPRITES 6
-#define BULLET_ENERGY_DAMAGE 25 //  damage caused by bullets
-#define ENEMY_ENERGY_DAMAGE 5   //  damage caused by enemy collisions
+#define BULLET_ENERGY_DAMAGE 25
+#define ENEMY_ENERGY_DAMAGE 5
 
 #define ALPHA 1
 
-//  Maps tile types to integer values for the level's tile map
 enum
 {
 	CELL_EMPTY = 0,
 	CELL_WALL = 1,
-	CELL_PLAYER = 2,    //  Player starting position
+	CELL_PLAYER = 2,
 	CELL_MUSHROOM = 3,
 	CELL_STAR = 4,
 	CELL_SPIKES = 5,
@@ -72,7 +65,6 @@ enum
 	CELL_DOOR = 9,
 };
 
-//  Maps sprite data types to integer values
 enum
 {
 	DATA_MUSHROOM = 0,
@@ -83,18 +75,9 @@ enum
 	DATA_PROJECTILE = 5
 };
 
-//constants
-const float timeslice = 1.0f;   //  Time step for physics calculations
-const float gravity = -0.05f;
-const float friction = 0.9f;
-const float jumpStrength = 0.6f;
-//  Half the width of the player for collision calculations
-const float player_half = 0.8f;
-const float move_speed = 0.03f;
 
 typedef float Flt;
 
-//  Tile Maps
 static 	int tileMap[MAX_LEVELS][MAX_HEIGHT][MAX_WIDTH] = {
 	{
 		{1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
@@ -193,8 +176,7 @@ class Projectile;
 class SpriteInfo
 {
 public:
-	//  Pointer to an image used as the texture for the sprite
-    Image* texture;
+	Image* texture;
 	int im_width;
 	int im_height;
 	float cell_width;
@@ -211,7 +193,6 @@ void abortGame(const char* msg);
 class Box2D
 {
 public:
-    // Coordinates for the bounding box
 	float x0;
 	float y0;
 	float x1;
@@ -221,7 +202,7 @@ public:
 
 	Box2D(float x0, float y0, float x1, float y1);
 	
-	bool isBox() const; // Checks if the box dimensions are valid
+	bool isBox() const;
 	
 	Box2D Union(const Box2D& b) const;
 
@@ -237,7 +218,7 @@ class Image
 {
 public:
     int width, height, depth;
-    unsigned char *data;    //  Pointer to pixel data
+    unsigned char *data;
 	GLuint id;
 	
     Image(const char *fname, int width, int height, int depth) ;
@@ -262,16 +243,15 @@ class Level
 {
 public:
     Level();
-	Image *backGround;  // Pointer to the background image
-	int & operator() (int x, int y);    // Overload to access tile values in the map
+	Image *backGround;
+	int & operator() (int x, int y);
 	void render(int w, int h);
  	int current_level;
 	void loadLevel(vector<Sprite> &sprites);
     int a[MAX_HEIGHT][MAX_WIDTH];
 
 	// return the collision code (0, 1, 2, 3)
-	// int checkCollision(float oldX, float oldY, float newX, float newY, 
-    // float spr_w, float spr_h);
+	// int checkCollision(float oldX, float oldY, float newX, float newY, float spr_w, float spr_h);
 	bool checkCollision(float oldX, float oldY, float newX, float newY);
 	
 	// original player position in the map´
@@ -288,7 +268,7 @@ public:
 	int walkFrame;
 	int energy;
 	int lives;
-	Image *sprite; //   Pointer to the player's sprite image
+	Image *sprite;
 	int lastDir; // 0=left, 1=right
 	int score;
 
@@ -310,7 +290,7 @@ public:
 
 	void render(int screenW, int screenH);
 
-	void getBox(Box2D& b);  // Returns the player's bounding box
+	void getBox(Box2D& b);
 
 
 };
@@ -327,9 +307,9 @@ public:
 
 	Sprite();
 	~Sprite();
-	virtual void set(float x, float y, int spriteIndex);// Sets sprite properties
+	virtual void set(float x, float y, int spriteIndex);
 	void moveTo(float x, float y);
-	float collide_area(Player& p);  // Calculates collision overlap with player
+	float collide_area(Player& p);
 	bool collide(Player& p);
 	float collide_area(int x, int y);
 	virtual void render(int screenW, int screenH);
