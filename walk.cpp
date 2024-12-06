@@ -673,7 +673,7 @@ int main(int argc, char** argv)
 	if (argc > 1)
 	{
 		int jumpTo = argv[1][0] - '1';
-		if (jumpTo >= 0 && jumpTo < 5)
+		if (jumpTo >= 0 && jumpTo < 7)
 			lev.current_level = jumpTo - 1;
 		else
 			printf("Invalid cheat code \"%s\": please, select a level between 1 and 5\n", argv[1]);
