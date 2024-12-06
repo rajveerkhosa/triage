@@ -588,12 +588,12 @@ void Player::getBox(Box2D& b)
 ///////////////////////////// SPRITE /////////////////////////////////
 
 SpriteInfo Sprite::data[MAX_SPRITES] = {
-	{NULL, 64, 64, 1, 1, "images/mushroom64x64x4.raw"},
-	{NULL, 64,128, 1, 2, "images/door64x128x4.raw"},
-	{NULL, 64, 64, 1, 1, "images/star64x64x4.raw"},
+	{NULL, 64, 64, 0.65, 0.65, "images/mushroom64x64x4.raw"},
+	{NULL, 64,128, 0.8, 1.6, "images/door64x128x4.raw"},
+	{NULL, 64, 64, 0.65, 0.65, "images/star64x64x4.raw"},
 	{NULL, 64, 64, 1, 1, "images/spikes64x64x4.raw"},
-	{NULL, 64, 64, 1, 1, "images/coin64x64x4.raw"},
-	{NULL,128, 64, 1, 1, "images/bullet128x64x4.raw"},
+	{NULL, 64, 64, 0.8, 0.8, "images/coin64x64x4.raw"},
+	{NULL,128, 64, 0.75, 0.75, "images/bullet128x64x4.raw"},
 };
 
 Sprite::Sprite()
@@ -685,10 +685,10 @@ void Sprite::render(int screenW, int screenH)
 
 void Sprite::getBox(Box2D& b)
 {
-	b.x0 = x - data[spriteIndex].cell_width * 0.5f;
-	b.x1 = x + data[spriteIndex].cell_width * 0.5f;
-	b.y0 = y - data[spriteIndex].cell_height* 0.5f;
-	b.y1 = y + data[spriteIndex].cell_height* 0.5f;
+	b.x0 = x - data[spriteIndex].cell_width * 1.0f;
+	b.x1 = x + data[spriteIndex].cell_width * 1.0f;
+	b.y0 = y - data[spriteIndex].cell_height* 1.0f;
+	b.y1 = y + data[spriteIndex].cell_height* 1.0f;
 }
 
 
