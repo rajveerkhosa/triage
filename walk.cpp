@@ -8,7 +8,7 @@
 //
 //Walk cycle using a sprite sheet.
 //images courtesy: http://games.ucla.edu/resource/walk-cycles/
-//
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,59 +18,60 @@
 #include <vector>
 #include "fonts.h"
 #include "rkhosa.h"
+#include "cschmiedel.h"
 #include <string>
 
 using namespace std;
 
 enum
 {
-	Start_Screen = 0,
-	Menu_Screen = 1,
-	Paused_Screen = 2,
-	Playing_Screen = 3,
+    Start_Screen = 0,
+    Menu_Screen = 1,
+    Paused_Screen = 2,
+    Playing_Screen = 3,
 };
 
 // opengl status
 struct GL_STRUCT
 {
-	GL_STRUCT()
-	{
-		play_mode = Start_Screen;
-		xres = 800;
-		yres = 600;
-		delay = 100;
-		projectile_delay = delay * 5;
-		player_projectile_delay = delay * 3;
-		camera[0] = 0.0f;
-		camera[1] = 0.0f;
-		camera[2] = -1.0f;
-		walkFrame = 0;
-		generateProjectile = false;
-		space_pending = false;
-	}
-	int play_mode;
-	bool space_pending;
-	int xres;
-	int yres;
-	map<int, bool> keys;
-	int delay;
-	int projectile_delay;
-	int player_projectile_delay;
-	float camera[3];
-	int walkFrame;
-	bool generateProjectile;
+    GL_STRUCT()
+    {   
+        play_mode = Start_Screen;
+        xres = 800;
+        yres = 600;
+        delay = 100;
+        projectile_delay = delay * 5;
+        player_projectile_delay = delay * 3;
+        camera[0] = 0.0f;
+        camera[1] = 0.0f;
+        camera[2] = -1.0f;
+        walkFrame = 0;
+        generateProjectile = false;
+        space_pending = false;
+    }   
+    int play_mode;
+    bool space_pending;
+    int xres;
+    int yres;
+    map<int, bool> keys;
+    int delay;
+    int projectile_delay;
+    int player_projectile_delay;
+    float camera[3];
+    int walkFrame;
+    bool generateProjectile;
 };
 
 
-SpriteInfo text_items[8] = {
-	{NULL,128, 64, 2, 1, "images/lives128x64x4.raw"},
-	{NULL,128, 64, 2, 1, "images/score128x64x4.raw"},
-	{NULL,128, 64, 2, 1, "images/health128x64x4.raw"},
-	{NULL,128, 64, 2, 1, "images/level128x64x4.raw"},
-	{NULL,512, 64, 2, 1, "images/numbers512x64x4.raw"},
-	{NULL,512, 128, 16, 8, "images/GAMEOVER512x128x4.raw"},
-	{NULL,800, 600, 16, 8, "images/pause.raw"},
-	{NULL,800, 600, 16, 8, "images/start.raw"},
+SpriteInfo text_items[8] = { 
+    {NULL,128, 64, 2, 1, "images/lives128x64x4.raw"},
+    {NULL,128, 64, 2, 1, "images/score128x64x4.raw"},
+    {NULL,128, 64, 2, 1, "images/health128x64x4.raw"},
+    {NULL,128, 64, 2, 1, "images/level128x64x4.raw"},
+    {NULL,512, 64, 2, 1, "images/numbers512x64x4.raw"},
+    {NULL,512, 128, 16, 8, "images/GAMEOVER512x128x4.raw"},
+    {NULL,800, 600, 16, 8, "images/pause.raw"},
+    {NULL,800, 600, 16, 8, "images/start.raw"},
 };
 
 
@@ -82,10 +83,17 @@ Level lev;
 Player player;
 
 // opengl instance
-GL_STRUCT gl;
+GL_STRUCT gl; 
 
 vector<Sprite> sprites;
 vector<Projectile> projectiles;
+
+
+// timer
+Timer game_timer;
+FPSCounter fpsCounter;
+
+
 
 /*
 
@@ -164,473 +172,499 @@ struct timespec prevTime, currTime, projectileTime, playerProjectileTime;
 
 long calculateTimeDifference(struct timespec start, struct timespec end) 
 { 
-	long secondsDiff = end.tv_sec - start.tv_sec; 
-	long nanoSecondsDiff = end.tv_nsec - start.tv_nsec; 
-	long microSecondsDiff = (secondsDiff * 1000000) + (nanoSecondsDiff / 1000); 
-	return microSecondsDiff; 
+    long secondsDiff = end.tv_sec - start.tv_sec; 
+    long nanoSecondsDiff = end.tv_nsec - start.tv_nsec; 
+    long microSecondsDiff = (secondsDiff * 1000000) + (nanoSecondsDiff / 1000); 
+    return microSecondsDiff;
 }
 
 
 void physics(void)
 {
-	// Character is walking...
-	// When time is up, advance the frame.
-	clock_gettime(CLOCK_REALTIME, &currTime);
-	long timeSpan = calculateTimeDifference(projectileTime, currTime);
-	if (timeSpan > gl.projectile_delay)
-	{
-		projectileTime = currTime;
+    // Character is walking...
+    // When time is up, advance the frame.
+    clock_gettime(CLOCK_REALTIME, &currTime);
+    long timeSpan = calculateTimeDifference(projectileTime, currTime);
+    if (timeSpan > gl.projectile_delay)
+    {   
+        projectileTime = currTime;
 
-		// generate a new projectile
-		gl.generateProjectile = true;
-	}
+        // generate a new projectile
+        gl.generateProjectile = true;
+    }       
 
-	timeSpan = calculateTimeDifference(playerProjectileTime, currTime);
-	if (timeSpan > gl.player_projectile_delay)
-	{
-		playerProjectileTime = currTime;
-		if (gl.space_pending) // player attack
-		{
-			gl.space_pending = false;
-			float x = player.pos[0];
-			float y = player.pos[1];
+    timeSpan = calculateTimeDifference(playerProjectileTime, currTime);
+    if (timeSpan > gl.player_projectile_delay)
+    {   
+        playerProjectileTime = currTime;
+        if (gl.space_pending) // player attack
+        {   
+            gl.space_pending = false;
+            float x = player.pos[0];
+            float y = player.pos[1];
 
-			bool dir = player.lastDir;
+            bool dir = player.lastDir;
 
-			if (dir == 0) // left
-				x -= 0.5f * player_half + 0.1f;
-			else
-				x += 0.5f * player_half + 0.1f;
+            if (dir == 0) // left
+                x -= 0.5f * player_half + 0.1f;
+            else    
+                x += 0.5f * player_half + 0.1f;
 
-			// generating player projectile
-			Projectile p(x, y, 1, dir, 0);
+            // generating player projectile
+            Projectile p(x, y, 1, dir, 0);
 
-			// adding it into the vector
-			projectiles.push_back(p);
-		}
-	}
+            // adding it into the vector
+            projectiles.push_back(p);
+        }       
+    }       
 
-	timeSpan = calculateTimeDifference(prevTime, currTime);
+    timeSpan = calculateTimeDifference(prevTime, currTime);
 
-	if (timeSpan > gl.delay)
-	{
+    if (timeSpan > gl.delay)
+    {   
 
-		for (int i = 0; i < projectiles.size(); i++)
-		{
-			bool res = projectiles[i].update(2*(4+lev.current_level)*move_speed, lev, player);
-			if (res && player.lives > 0)
-			{
-				projectiles.erase(projectiles.begin() + i);
-				--i;
-			}
-		}
+        for (int i = 0; i < projectiles.size(); i++)
+        {   
+            bool res = projectiles[i].update(2*(4+lev.current_level)*move_speed, lev, player);   
+            if (res && player.lives > 0)
+            {   
+                projectiles.erase(projectiles.begin() + i);
+                --i;
+            }       
+        }       
 
-		prevTime = currTime;
-		player.nextFrame();
-		if (gl.keys[XK_Left])
-		{
-			//gl.box[i][0] += 1.0 * (0.05 / gl.delay);
-			//if (gl.box[i][0] > gl.xres + 10.0)
-			//    gl.box[i][0] -= gl.xres + 10.0;
-			//gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-			//if (gl.camera[0] < 0.0)
-			//    gl.camera[0] = 0.0;
-			player.move(-move_speed, lev);
+        prevTime = currTime;
+        player.nextFrame();
+        if (gl.keys[XK_Left])
+        {   
+            //gl.box[i][0] += 1.0 * (0.05 / gl.delay);
+            //if (gl.box[i][0] > gl.xres + 10.0)
+            //    gl.box[i][0] -= gl.xres + 10.0;
+            //gl.camera[0] -= 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+            //if (gl.camera[0] < 0.0)
+            //    gl.camera[0] = 0.0;
+            player.move(-move_speed, lev);
 
-		}
-		else if (gl.keys[XK_Right])
-		{
-			//gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
-			//if (gl.box[i][0] < -10.0)
-			//    gl.box[i][0] += gl.xres + 10.0;
-			//gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
-			//if (gl.camera[0] < 0.0)
-			//    gl.camera[0] = 0.0;
-			player.move(+move_speed, lev);
-		}
-		else
-		{
-			player.move(0.0f, lev);
-		}
-	}
-	if (gl.keys[XK_Up]) 
-	{
-		//printf("jump\n"); fflush(stdout);
-		player.jump();
-	}
-	//printf("%.2f %.2f\r", player.pos[0], player.pos[1]);
+        }
+        else if (gl.keys[XK_Right])
+        {   
+            //gl.box[i][0] -= 1.0 * (0.05 / gl.delay);
+            //if (gl.box[i][0] < -10.0)
+            //    gl.box[i][0] += gl.xres + 10.0;
+            //gl.camera[0] += 2.0 / lev.tilesize[0] * (0.05 / gl.delay);
+            //if (gl.camera[0] < 0.0)
+            //    gl.camera[0] = 0.0;
+            player.move(+move_speed, lev);
+        }       
+        else
+        {   
+            player.move(0.0f, lev);
+        }       
+    }       
+    if (gl.keys[XK_Up])
+    {   
+        //printf("jump\n"); fflush(stdout);
+        player.jump();
+    }       
+    //printf("%.2f %.2f\r", player.pos[0], player.pos[1]);
 }
 
 
 void render_texture(int screenW, int screenH, int x, int y, int index)
 {
-	text_items[index].texture->set();
+    text_items[index].texture->set();
 
-	float cell_size = screenW / (float)MAX_WIDTH;
-	float w = cell_size * text_items[index].cell_width;
-	float h = cell_size * text_items[index].cell_height;
-	if (index >= 6)
-	{
-		w = 800;
-		h = 600;
-	}
-	float X = x * cell_size;
-	float Y = y * cell_size;
-	glColor3f(1, 1, 1);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glBegin(GL_QUADS);
-		glTexCoord2f(0, 1); glVertex2f(X, Y);
-		glTexCoord2f(1, 1); glVertex2f(X + w, Y);
-		glTexCoord2f(1, 0); glVertex2f(X + w, Y + h);
-		glTexCoord2f(0, 0); glVertex2f(X, Y + h);
-	glEnd();
-	glDisable(GL_BLEND);
+    float cell_size = screenW / (float)MAX_WIDTH;
+    float w = cell_size * text_items[index].cell_width;
+    float h = cell_size * text_items[index].cell_height;
+    if (index >= 6)
+    {   
+        w = 800;
+        h = 600;
+    }       
+    float X = x * cell_size;
+    float Y = y * cell_size;
+    glColor3f(1, 1, 1);
+    glEnable(GL_BLEND); 
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glBegin(GL_QUADS);
+        glTexCoord2f(0, 1); glVertex2f(X, Y);
+        glTexCoord2f(1, 1); glVertex2f(X + w, Y);
+        glTexCoord2f(1, 0); glVertex2f(X + w, Y + h);
+        glTexCoord2f(0, 0); glVertex2f(X, Y + h); 
+    glEnd();
+    glDisable(GL_BLEND);
 }
 
 void drawNumber(int x, int y, int number)
 {
-	// activating the texture
-	text_items[4].texture->set();
+    // activating the texture
+    text_items[4].texture->set();
 
-	int digits[10];
-	int s = number;
-	int length = 0;
+    int digits[10];
+    int s = number;
+    int length = 0;
 
-	// computing number of digits
-	while (s)
-	{
-		digits[length] = s % 10;
-		length++;
-		s /= 10;
-	}
-	if (length == 0)
-	{
-		length = 1;
-		digits[0] = 0;
-	}
+    // computing number of digits
+    while (s)
+    {   
+        digits[length] = s % 10;
+        length++;
+        s /= 10;
+    }       
+    if (length == 0)
+    {   
+        length = 1;
+        digits[0] = 0;
+    }       
 
-	glColor3f(1, 1, 1);
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glColor3f(1, 1, 1);
+    glEnable(GL_BLEND); 
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	// display digit by digit
-	int L = 20;
-	glBegin(GL_QUADS);
-	for (int i = length - 1; i >= 0; i--, x+=L)
-	{
-		int d = digits[i];
-		glTexCoord2f(d * 51.2f / 512.0f, 1);
-		glVertex3i(x, y, 0);
+    // display digit by digit
+    int L = 20;
+    glBegin(GL_QUADS);
+    for (int i = length - 1; i >= 0; i--, x+=L)
+    {   
+        int d = digits[i];
+        glTexCoord2f(d * 51.2f / 512.0f, 1);
+        glVertex3i(x, y, 0); 
 
-		glTexCoord2f((d + 1) * 51.2f / 512.0f, 1);
-		glVertex3i(x + L, y, 0);
+        glTexCoord2f((d + 1) * 51.2f / 512.0f, 1);
+        glVertex3i(x + L, y, 0); 
 
-		glTexCoord2f((d + 1) * 51.2f / 512.0f, 0);
-		glVertex3i(x + L, y + L, 0);
+        glTexCoord2f((d + 1) * 51.2f / 512.0f, 0);
+        glVertex3i(x + L, y + L, 0);
 
-		glTexCoord2f(d * 51.2f / 512.0f, 0);
-		glVertex3i(x, y + L, 0);
-	}
-	glEnd();
-	glDisable(GL_BLEND);
+        glTexCoord2f(d * 51.2f / 512.0f, 0);
+        glVertex3i(x, y + L, 0);
+    }       
+    glEnd();
+    glDisable(GL_BLEND);
 }
 
 
 void render()
 {
-	// Clear screen
+    // Clear screen
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-
-	// matrix
-	glMatrixMode(GL_PROJECTION);
-	glLoadIdentity();
-	glOrtho(0.0, gl.xres, 0.0, gl.yres, 1, -1);
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-
-	if (gl.play_mode == Start_Screen)
-	{
-		if (text_items[7].texture == NULL)
-		{
-			text_items[7].texture = new Image(text_items[7].filelame, text_items[7].im_width, text_items[7].im_height, 3);
-			if (text_items[7].texture->id == 0)
-				abortGame((string("Error loading ") + string(text_items[7].filelame)).c_str());
-		}
-		render_texture(gl.xres, gl.yres, 0, 0, 7);
-
-		return;
-	}
-	if (gl.play_mode == Paused_Screen)
-	{
-		// draw lives
-		if (text_items[6].texture == NULL)
-		{
-			text_items[6].texture = new Image(text_items[6].filelame, text_items[6].im_width, text_items[6].im_height, 3);
-			if (text_items[6].texture->id == 0)
-				abortGame((string("Error loading ") + string(text_items[6].filelame)).c_str());
-		}
-		render_texture(gl.xres, gl.yres, 0, 0, 6);
-
-		return;
-	}
-
-	
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 
+    // matrix
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(0.0, gl.xres, 0.0, gl.yres, 1, -1);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
 
-	lev.render(gl.xres, gl.yres);
-	for (unsigned int i = 0; i < sprites.size(); i++)
-	{
-		if (sprites[i].spriteIndex == DATA_SPIKES)
-		{
-			if (gl.generateProjectile && player.lives)
-			{
-				float x = sprites[i].x;
-				float y = sprites[i].y;
+    if (gl.play_mode == Start_Screen)
+    {   
+        if (text_items[7].texture == NULL)
+        {   
+            text_items[7].texture = new Image(text_items[7].filelame, text_items[7].im_width, text_items[7].im_height, 3);
+            if (text_items[7].texture->id == 0)
+                abortGame((string("Error loading ") + string(text_items[7].filelame)).c_str());      
+        }
+        render_texture(gl.xres, gl.yres, 0, 0, 7);
 
-				bool dir;
-				if (lev(sprites[i].x + 1, sprites[i].y) == CELL_WALL)
-					dir = 0;
-				else if (lev(sprites[i].x - 1, sprites[i].y) == CELL_WALL)
-					dir = 1;
-				else
-					dir = ((rand() & 1) == 1);
+        return;
+    }       
+    if (gl.play_mode == Paused_Screen)
+    {   
+        // draw lives
+        if (text_items[6].texture == NULL)
+        {   
+            text_items[6].texture = new Image(text_items[6].filelame, text_items[6].im_width, text_items[6].im_height, 3);
+            if (text_items[6].texture->id == 0)
+                abortGame((string("Error loading ") + string(text_items[6].filelame)).c_str());      
+        }
+        render_texture(gl.xres, gl.yres, 0, 0, 6);
 
-				if (dir == 0) // left
-					x -= Sprite::data[sprites[i].spriteIndex].cell_width + 0.1f;
-				else
-					x += Sprite::data[sprites[i].spriteIndex].cell_width + 0.1f;
+        return;
+    }       
 
-				// generating enemy projectile
-				Projectile p( x,  y, 1, dir, 1);
-
-				// adding it into the vector
-				projectiles.push_back(p);
-			}
-		}
-		sprites[i].render(gl.xres, gl.yres);
-	}
-	gl.generateProjectile = false;
-
-	for (unsigned int i = 0; i < projectiles.size(); i++)
-		projectiles[i].render(gl.xres, gl.yres);
-
-	player.render(gl.xres, gl.yres);
-
-	if (text_items[4].texture == NULL)
-	{
-		text_items[4].texture = new Image(text_items[4].filelame, text_items[4].im_width, text_items[4].im_height, 4);
-		if (text_items[4].texture->id == 0)
-			abortGame((string("Error loading ") + string(text_items[4].filelame)).c_str());
-	}
+    
 
 
-	// draw lives
-	if (text_items[0].texture == NULL)
-	{
-		text_items[0].texture = new Image(text_items[0].filelame, text_items[0].im_width, text_items[0].im_height, 4);
-		if (text_items[0].texture->id == 0)
-			abortGame((string("Error loading ") + string(text_items[0].filelame)).c_str());
-	}
-	render_texture(gl.xres, gl.yres, 1, 0, 0);
-	drawNumber(120, 10, player.lives);
 
-	// score
-	if (text_items[1].texture == NULL)
-	{
-		text_items[1].texture = new Image(text_items[1].filelame, text_items[1].im_width, text_items[1].im_height, 4);
-		if (text_items[1].texture->id == 0)
-			abortGame((string("Error loading ") + string(text_items[1].filelame)).c_str());
-	}
-	render_texture(gl.xres, gl.yres, 4, 0, 1);
-	drawNumber(250, 10, player.score);
+    lev.render(gl.xres, gl.yres);
+    for (unsigned int i = 0; i < sprites.size(); i++)
+    {   
+        if (sprites[i].spriteIndex == DATA_SPIKES)
+        {   
+            if (gl.generateProjectile && player.lives)
+            {   
+                float x = sprites[i].x;
+                float y = sprites[i].y;
 
-	// health
-	if (text_items[2].texture == NULL)
-	{
-		text_items[2].texture = new Image(text_items[2].filelame, text_items[2].im_width, text_items[2].im_height, 4);
-		if (text_items[2].texture->id == 0)
-			abortGame((string("Error loading ") + string(text_items[2].filelame)).c_str());
-	}
-	render_texture(gl.xres, gl.yres, 11, 0, 2);
-	drawNumber(550, 10, player.energy);
+                bool dir;
+                if (lev(sprites[i].x + 1, sprites[i].y) == CELL_WALL)
+                    dir = 0;
+                else if (lev(sprites[i].x - 1, sprites[i].y) == CELL_WALL)
+                    dir = 1;
+                else    
+                    dir = ((rand() & 1) == 1);
 
-	// level
-	if (text_items[3].texture == NULL)
-	{
-		text_items[3].texture = new Image(text_items[3].filelame, text_items[3].im_width, text_items[3].im_height, 4);
-		if (text_items[3].texture->id == 0)
-			abortGame((string("Error loading ") + string(text_items[3].filelame)).c_str());
-	}
-	render_texture(gl.xres, gl.yres, 16, 0, 3);
-	drawNumber(750, 10, lev.current_level);
+                if (dir == 0) // left
+                    x -= Sprite::data[sprites[i].spriteIndex].cell_width + 0.1f;
+                else    
+                    x += Sprite::data[sprites[i].spriteIndex].cell_width + 0.1f;
 
-	if (player.lives == 0)
-	{
-		if (text_items[5].texture == NULL)
-		{
-			text_items[5].texture = new Image(text_items[5].filelame, text_items[5].im_width, text_items[5].im_height, 4);
-			if (text_items[5].texture->id == 0)
-				abortGame((string("Error loading ") + string(text_items[5].filelame)).c_str());
-		}
-		// game over message
-		render_texture(gl.xres, gl.yres, 2, 5, 5);
-	}
+                // generating enemy projectile
+                Projectile p( x,  y, 1, dir, 1);
+
+                // adding it into the vector
+                projectiles.push_back(p);
+            }
+        }           
+        sprites[i].render(gl.xres, gl.yres);
+    }           
+    gl.generateProjectile = false;
+
+    for (unsigned int i = 0; i < projectiles.size(); i++)
+        projectiles[i].render(gl.xres, gl.yres);
+
+    player.render(gl.xres, gl.yres); 
+
+    if (text_items[4].texture == NULL)
+    {   
+        text_items[4].texture = new Image(text_items[4].filelame, text_items[4].im_width, text_items[4].im_height, 4);
+        if (text_items[4].texture->id == 0)
+            abortGame((string("Error loading ") + string(text_items[4].filelame)).c_str());
+    }       
+
+
+    // draw lives
+    if (text_items[0].texture == NULL)
+    {
+        text_items[0].texture = new Image(text_items[0].filelame, text_items[0].im_width, text_items[0].im_height, 4);
+        if (text_items[0].texture->id == 0)
+            abortGame((string("Error loading ") + string(text_items[0].filelame)).c_str());
+    }       
+    render_texture(gl.xres, gl.yres, 1, 0, 0);
+    drawNumber(120, 10, player.lives);
+
+
+// Timer rendering
+ if (text_items[4].texture == NULL) {
+     text_items[4].texture = new Image(text_items[4].filelame, text_items[4].im_width, text_items[4].im_height, 4);
+     if (text_items[4].texture->id == 0)
+         abortGame((string("Error loading ") + string(text_items[4].filelame)).c_str());
+ }
+ 
+ //render_texture(gl.xres, gl.yres, 0, 1, 4); // Timer texture
+ int remaining_time = game_timer.getRemainingTime();
+ int minutes = remaining_time / 60;
+ int seconds = remaining_time % 60;
+ drawNumber(50, gl.yres - 30, minutes * 100 + seconds); // Display MM:SS
+
+ fpsCounter.render(50, gl.yres - 70);
+    // score
+    if (text_items[1].texture == NULL)
+    {
+        text_items[1].texture = new Image(text_items[1].filelame, text_items[1].im_width, text_items[1].im_height, 4);
+        if (text_items[1].texture->id == 0)
+            abortGame((string("Error loading ") + string(text_items[1].filelame)).c_str());
+    }       
+    render_texture(gl.xres, gl.yres, 4, 0, 1);
+    drawNumber(250, 10, player.score);
+
+    // health
+    if (text_items[2].texture == NULL)
+    {
+        text_items[2].texture = new Image(text_items[2].filelame, text_items[2].im_width, text_items[2].im_height, 4);
+        if (text_items[2].texture->id == 0)
+            abortGame((string("Error loading ") + string(text_items[2].filelame)).c_str());
+    }       
+    render_texture(gl.xres, gl.yres, 11, 0, 2);
+    drawNumber(550, 10, player.energy);
+
+    // level
+    if (text_items[3].texture == NULL)
+    {
+        text_items[3].texture = new Image(text_items[3].filelame, text_items[3].im_width, text_items[3].im_height, 4);
+        if (text_items[3].texture->id == 0)
+            abortGame((string("Error loading ") + string(text_items[3].filelame)).c_str());
+    }       
+    render_texture(gl.xres, gl.yres, 16, 0, 3);
+    drawNumber(750, 10, lev.current_level);
+
+    if (player.lives == 0)
+    {   
+        if (text_items[5].texture == NULL)
+        {
+            text_items[5].texture = new Image(text_items[5].filelame, text_items[5].im_width, text_items[5].im_height, 4);
+            if (text_items[5].texture->id == 0)
+                abortGame((string("Error loading ") + string(text_items[5].filelame)).c_str());
+        }       
+        // game over message
+        render_texture(gl.xres, gl.yres, 2, 5, 5);
+    }       
 
 }
 
 void nextLevel()
 {
-	//Init all
-	clock_gettime(CLOCK_REALTIME, &prevTime);
-	projectileTime = prevTime;
-	playerProjectileTime = projectileTime;
+    //Init all
+    clock_gettime(CLOCK_REALTIME, &prevTime);
+    projectileTime = prevTime;
+    playerProjectileTime = projectileTime;
 
-	sprites.clear();
-	player.init();
-	projectiles.clear();
-	gl.space_pending = false;
-	// more difficult while the level increases
-	gl.projectile_delay = gl.delay * (6 - lev.current_level) * 1000;
+    sprites.clear();
+    player.init();
+    projectiles.clear();
+    gl.space_pending = false;
+    // more difficult while the level increases
+    gl.projectile_delay = gl.delay * (6 - lev.current_level) * 1000;
 
 
-	lev.loadLevel(sprites);
-	player.init();
-	player.setPos((float)lev.srcPlayerX, (float)lev.srcPlayerY);
+    lev.loadLevel(sprites); 
+    player.init();
+    player.setPos((float)lev.srcPlayerX, (float)lev.srcPlayerY);
+
+    game_timer.start(60);
 }
 
 void update()
 {
-	physics();
-	for (unsigned int i = 0; i < sprites.size(); i++)
-	{
-		if (lev(sprites[i].x, sprites[i].y) == CELL_EMPTY) // sprite was killed
-		{
-			sprites.erase(sprites.begin() + i);
-			i--;
-			continue;
-		}
-		if (sprites[i].collide(player))
-		{
-			float a = sprites[i].collide_area(player);
-			if (a > 0.7f)
-			{
-				if (sprites[i].spriteIndex == DATA_COIN)
-				{
-					player.score+=10;
-					sprites.erase(sprites.begin() + i);
-					break;
-				}
-				if (sprites[i].spriteIndex == DATA_DOOR)
-				{
-					if (a > 0.9f)
-					{
-						printf("level completed\n", lev.current_level);
-						nextLevel();
-						break;
-					}
-				}
-				else
-				{
-					player.energy -= ENEMY_ENERGY_DAMAGE;
-					if (player.energy <= 0)
-					{
-						player.lives--;
-						if (player.lives > 0)
-							player.energy = 100;
-						else
-							player.energy = 0;
-					}
-					break;
-				}
-			}
-		}
-	}
+    if (game_timer.getRemainingTime() == 0 && gl.play_mode == Playing_Screen)
+    {
+        player.lives = 0; // Player loses all lives when time runs out
+        player.energy = 0;
+    }   
+
+    physics();
+    for (unsigned int i = 0; i < sprites.size(); i++)
+    {
+        if (lev(sprites[i].x, sprites[i].y) == CELL_EMPTY) // sprite was killed
+        {
+            sprites.erase(sprites.begin() + i);
+            i--;
+            continue;
+        }   
+        if (sprites[i].collide(player))
+        {       
+            float a = sprites[i].collide_area(player);
+            if (a > 0.7f)
+            {
+                if (sprites[i].spriteIndex == DATA_COIN)
+                {
+                    player.score+=10;
+                    sprites.erase(sprites.begin() + i);
+                    break;
+                }   
+                if (sprites[i].spriteIndex == DATA_DOOR)
+                {       
+                    if (a > 0.9f)
+                    {
+                        printf("level completed\n", lev.current_level);
+                        nextLevel();
+                        break;
+                    }   
+                }           
+                else        
+                {           
+                    player.energy -= ENEMY_ENERGY_DAMAGE;
+                    if (player.energy <= 0)
+                    {
+                        player.lives--;
+                        if (player.lives > 0)
+                            player.energy = 100;
+                        else
+                            player.energy = 0;
+                    }       
+                    break;      
+                }           
+            }                   
+        }               
+    }                   
 }
 
 
-
-void gameLoop(Display* display, Window win) 
+void gameLoop(Display* display, Window win)
 {
+    while (1)
+    {
+        if (gl.play_mode == Playing_Screen && player.lives > 0) {
+            update();
+        }
+        render();
+    fpsCounter.update();
 
-    while (1) 
-	{
-		
-		if (gl.play_mode == Playing_Screen && player.lives > 0)
-			update();
-		render();
+        glXSwapBuffers(display, win);
 
-		glXSwapBuffers(display, win);
+        while (XPending(display))
+        {
+            XEvent xev;
+            XNextEvent(display, &xev);
 
-		while (XPending(display))
-		{
-			XEvent xev;
-			XNextEvent(display, &xev);
+            if (xev.type == Expose)
+            {   
+                // Delay or sleep for frame rate control
+            }
+            else if (xev.type == KeyPress)
+            {   
+                KeySym key = XLookupKeysym(&xev.xkey, 0);
+                gl.keys[key] = true;
 
-			if (xev.type == Expose) 
-			{
-				// Delay or sleep for frame rate control
-			} 
-			else if (xev.type == KeyPress) 
-			{
-				KeySym key = XLookupKeysym(&xev.xkey, 0); 
-				gl.keys[key] = true;
-
-				if (key == 32 && gl.play_mode == Playing_Screen)
-					gl.space_pending = true;
-				else if (key == 'q' || key == 'Q')
-					exit(1);
-				else if (key == ESC)
-				{
-					if (gl.play_mode == Start_Screen)
-					{
-						if (player.score != 0)
-							lev.current_level = -1;
-						nextLevel();
-						gl.play_mode = Playing_Screen;
-					}
-					else if (gl.play_mode == Paused_Screen)
-					{
-						gl.play_mode = Playing_Screen;
-					}
-					else if (gl.play_mode == Playing_Screen)
-					{
-						if (player.lives == 0)
-							gl.play_mode = Start_Screen;
-						else
-							gl.play_mode = Paused_Screen;
-					}
-				}
-			}
-			else if (xev.type == KeyRelease) 
-			{
-				KeySym key = XLookupKeysym(&xev.xkey, 0); 
-				gl.keys[key] = false;
-			}
-		}
-
-    }
-
+                if (key == 32 && gl.play_mode == Playing_Screen) {
+                    gl.space_pending = true;
+                } else if (key == 'q' || key == 'Q') {
+                    exit(1);
+                } else if (key == ESC)
+                {       
+                    if (gl.play_mode == Start_Screen)
+                    {   
+                        if (player.score != 0) {
+                            lev.current_level = -1;
+                        }
+                        nextLevel();
+                        gl.play_mode = Playing_Screen;
+                        game_timer.start(60); // Reset timer on new game start
+                    }       
+                    else if (gl.play_mode == Paused_Screen)
+                    {       
+                        gl.play_mode = Playing_Screen;
+                        game_timer.resume(); // Resume the timer
+                    }   
+                    else if (gl.play_mode == Playing_Screen)
+                    {   
+                        if (player.lives == 0) {
+                            gl.play_mode = Start_Screen;
+                        } else {
+                            gl.play_mode = Paused_Screen;
+                            game_timer.pause(); // Pause the timer
+                        }   
+                    }           
+                }           
+            }                   
+            else if (xev.type == KeyRelease)
+            {               
+                KeySym key = XLookupKeysym(&xev.xkey, 0);
+                gl.keys[key] = false;
+            }   
+        }       
+    }           
 }
+
 
 // Function to create an OpenGL context
-GLXContext createGLContext(Display* display) 
+GLXContext createGLContext(Display* display)
 {
     static int visualAttribs[] = { None };
     int numConfigs;
     GLXFBConfig* fbConfigs = glXChooseFBConfig(display, DefaultScreen(display), visualAttribs, &numConfigs);
-    if (!fbConfigs) 
-	{
+    if (!fbConfigs)
+    {   
         fprintf(stderr, "Failed to get framebuffer config\n");
         exit(1);
     }
 
     GLXContext context = glXCreateNewContext(display, fbConfigs[0], GLX_RGBA_TYPE, NULL, True);
     if (!context) 
-	{
+    {   
         fprintf(stderr, "Failed to create OpenGL context\n");
         exit(1);
     }
@@ -643,11 +677,11 @@ GLXContext createGLContext(Display* display)
 int main(int argc, char** argv)
 {
     Display* display = XOpenDisplay(NULL);
-    if (!display) 
-	{
+    if (!display)
+    {
         fprintf(stderr, "Failed to open X display\n");
         return 1;
-    }
+    }   
 
     Window root = DefaultRootWindow(display);
 
@@ -655,13 +689,13 @@ int main(int argc, char** argv)
     swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask;
 
     Window win = XCreateWindow
-	(
+    (
         display, root,
         0, 0, 800, 600, 0,
         CopyFromParent, InputOutput,
         CopyFromParent, CWEventMask,
         &swa
-    );
+    );      
 
     XMapWindow(display, win);
     XStoreName(display, win, "Jumping game");
@@ -670,21 +704,21 @@ int main(int argc, char** argv)
     glXMakeCurrent(display, win, context);
 
 
-	if (argc > 1)
-	{
-		int jumpTo = argv[1][0] - '1';
-		if (jumpTo >= 0 && jumpTo < 7)
-			lev.current_level = jumpTo - 1;
-		else
-			printf("Invalid cheat code \"%s\": please, select a level between 1 and 5\n", argv[1]);
-	}
+    if (argc > 1)
+    {   
+        int jumpTo = argv[1][0] - '1';
+        if (jumpTo >= 0 && jumpTo < 5)
+            lev.current_level = jumpTo - 1;
+        else
+            printf("Invalid cheat code \"%s\": please, select a level between 1 and 5\n", argv[1]);
+    }       
 
 
 
-    // Game loop
-	gameLoop(display, win);
+    // Game loop 
+    gameLoop(display, win);
 
-	// destroying opengl and window
+    // destroying opengl and window
     glXMakeCurrent(display, None, NULL);
     glXDestroyContext(display, context);
     XDestroyWindow(display, win);
