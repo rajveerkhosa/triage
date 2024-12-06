@@ -524,7 +524,7 @@ void nextLevel()
     player.init();
     player.setPos((float)lev.srcPlayerX, (float)lev.srcPlayerY);
 
-    game_timer.start(60);
+    game_timer.start(59);
 }
 
 void update()
@@ -622,7 +622,7 @@ void gameLoop(Display* display, Window win)
                         }
                         nextLevel();
                         gl.play_mode = Playing_Screen;
-                        game_timer.start(60); // Reset timer on new game start
+                        game_timer.start(59); // Reset timer on new game start
                     }       
                     else if (gl.play_mode == Paused_Screen)
                     {       
