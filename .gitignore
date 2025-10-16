@@ -1,3 +1,26 @@
+# Compiled executables
 walk
+
+# Object files
+*.o
 rkhosa.o
 walk.o
+cschmiedel.o
+
+# Claude Code configuration
+.claude/
+
+# macOS system files
+.DS_Store
+
+# Log files
+*.log
+game_log.txt
+
+# Editor backup files
+*~
+*.swp
+*.swo
+
+# Temporary files
+*.tmp

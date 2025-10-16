@@ -3,7 +3,7 @@
 //author:  Gordon Griesel
 //date:    summer 2017 - 2018
 //
-//Modified: [Your Name] - [Date]
+//Modified: Rajveer Khosa - [2025]
 //Added level design, collision detection, and basic physics engine.
 //
 //Walk cycle using a sprite sheet.
