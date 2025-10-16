@@ -9,12 +9,12 @@ Navigate through progressively challenging levels filled with obstacles, enemies
 ## Screenshots
 
 <p align="center">
-  <img src="imgs/Screenshot 2025-10-16 at 10.44.51 AM.png" width="45%" alt="Gameplay Screenshot 1">
-  <img src="imgs/Screenshot 2025-10-16 at 10.45.12 AM.png" width="45%" alt="Gameplay Screenshot 2">
+  <img src="imgs/Screenshot%202025-10-16%20at%2010.44.51%20AM.png" width="45%" alt="Gameplay Screenshot 1">
+  <img src="imgs/Screenshot%202025-10-16%20at%2010.45.12%20AM.png" width="45%" alt="Gameplay Screenshot 2">
 </p>
 
 <p align="center">
-  <img src="imgs/Screenshot 2025-10-16 at 10.45.23 AM.png" width="45%" alt="Gameplay Screenshot 3">
+  <img src="imgs/Screenshot%202025-10-16%20at%2010.45.23%20AM.png" width="45%" alt="Gameplay Screenshot 3">
 </p>
 
 ## Features
